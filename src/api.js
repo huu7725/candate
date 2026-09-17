@@ -1,9 +1,24 @@
+import { deriveCredential } from '../shared/credentials.js';
+
 export async function api(path, options = {}) {
+  let payload = options.body;
+  if (
+    import.meta.env.MODE === 'cloudflare' &&
+    ['/auth/login', '/auth/register'].includes(path) &&
+    payload?.password
+  ) {
+    const { password, ...rest } = payload;
+    payload = {
+      ...rest,
+      credential: await deriveCredential(rest.email, password),
+      credential_version: 'cf-v1',
+    };
+  }
   const response = await fetch(`/api${path}`, {
     credentials: 'same-origin',
     ...options,
     headers: { 'Content-Type': 'application/json', ...options.headers },
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    body: payload === undefined ? undefined : JSON.stringify(payload),
   });
   if (!response.headers.get('content-type')?.includes('application/json')) {
     const error = new Error('Không thể kết nối dịch vụ. Vui lòng thử lại sau.');

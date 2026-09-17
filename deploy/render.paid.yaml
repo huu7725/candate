@@ -1,5 +1,5 @@
 # Full-stack deployment: Express serves the Vite build and the SQLite API.
-# This paid compute plan is required for a persistent disk. See DEPLOYMENT.md.
+# Optional paid alternative; default deployment is Cloudflare Free (DEPLOYMENT.md).
 services:
   - type: web
     name: candate

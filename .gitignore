@@ -10,3 +10,9 @@ data/
 *.db-*
 *.log
 test-results/
+.wrangler/
+.dev.vars
+.dev.vars.*
+dist-cloudflare/
+cloudflare/admin-*.sql
+wrangler.generated.json

@@ -2,7 +2,9 @@
 
 Bản MVP full-stack chạy được, viết bằng React + Vite, Node.js + Express, **chỉ dùng SQLite**. Giao diện tiếng Việt, không có icon, SVG, emoji hoặc thư viện icon. Minh họa bao bì được dựng bằng chữ và CSS; không phải ảnh thật của sản phẩm. Font được đóng gói cùng ứng dụng, không cần gọi Google Fonts khi chạy.
 
-**Đưa website lên mạng:** xem [hướng dẫn triển khai Render](DEPLOYMENT.md) và [render.yaml](render.yaml). GitHub Pages không chạy được Express/SQLite. Render phục vụ cả giao diện và API cùng URL HTTPS, lưu SQLite trên persistent disk và tạo Admin từ thông tin riêng bạn nhập trên Render.
+**Đưa website lên mạng miễn phí:** xem [hướng dẫn Cloudflare Workers + D1 Free](DEPLOYMENT.md) và [wrangler.jsonc](wrangler.jsonc). D1 dùng SQLite, giữ dữ liệu qua các lần deploy; Workers phục vụ API và frontend cùng URL HTTPS `workers.dev`. Giữ gói Free và theo dõi hạn mức. GitHub Pages không chạy backend của ứng dụng.
+
+Bản online dùng Hono/Web APIs trong `cloudflare/`; bản Express + SQLite trong `server/` vẫn dùng được khi chạy cục bộ. Tài khoản và database của hai bản độc lập. Dùng Node **22 trở lên** để chạy Cloudflare CLI và kiểm thử D1. Phương án [Render trả phí](docs/DEPLOYMENT-RENDER.md) được lưu làm lựa chọn dự phòng.
 
 ## 1. Database schema trước tiên
 
@@ -81,6 +83,17 @@ API còn xác thực ngày lịch thực tế, nên `2026-02-31` bị từ chố
 │   └── styles.css          # Responsive, typography, minh họa CSS
 ├── tests/
 │   └── business.test.js    # Kiểm thử API và nghiệp vụ bằng SQLite in-memory
+├── cloudflare/
+│   ├── index.js            # API online đầy đủ 5 role, Hono + D1
+│   ├── auth.js             # Session, verifier, giới hạn đăng nhập
+│   ├── db.js               # SQL giá, truy vấn async và transaction guards
+│   ├── validation.js       # Kiểm tra dữ liệu request
+│   ├── setup.js            # Thiết lập secret và Admin bằng Wrangler
+│   ├── setup-lib.js        # Hash và SQL khởi tạo Admin
+│   ├── migrations/        # SQLite schema dành cho D1
+│   └── tests/             # Kiểm thử trên workerd/D1 thực
+├── shared/credentials.js  # KDF bằng Web Crypto cho browser Cloudflare
+├── public/_headers        # Security headers cho Cloudflare static assets
 ├── data/market.sqlite      # Sinh khi chạy; không đưa vào Git
 ├── dist/                   # Frontend build; sinh bằng npm run build
 ├── .env.example
@@ -89,14 +102,15 @@ API còn xác thực ngày lịch thực tế, nên `2026-02-31` bị từ chố
 ├── package.json
 ├── package-lock.json
 ├── vite.config.js
-├── render.yaml             # Cấu hình Render Web Service và persistent disk
-├── DEPLOYMENT.md           # Các bước deploy, chi phí, khởi tạo dữ liệu
+├── wrangler.jsonc          # Cấu hình Cloudflare Workers + D1 Free
+├── deploy/render.paid.yaml # Cấu hình Render trả phí dự phòng
+├── DEPLOYMENT.md           # Các bước deploy miễn phí, hạn mức và dữ liệu
 └── README.md
 ```
 
 ## 3. Chạy ứng dụng
 
-Yêu cầu Node.js **20.12 trở lên**; đã kiểm tra với Node 20.18.2 trên Windows. Chạy tại thư mục dự án:
+Khuyến nghị Node.js **22.23.2 LTS** (Cloudflare CLI bắt buộc >=22). Backend Express cũng đã được kiểm tra với Node 20.18.2 trên Windows. Chạy tại thư mục dự án:
 
 ```powershell
 npm ci
@@ -267,6 +281,8 @@ npm run build
 ```
 
 21 kiểm thử tự động: 14 kiểm thử nghiệp vụ kiểm tra biên 0/3/7/14 ngày và ngày nhuận, múi giờ, đăng ký không tự tăng quyền, mật khẩu hash, RBAC, chặn khác origin, hàng hết hạn/hết kho, sở hữu Vendor, ghép giỏ nguyên tử, idempotency, giá snapshot, hai khách tranh một món, giỏ qua hạn, chủ đơn giao hàng, kiểm duyệt, báo cáo, giao lại/hủy và thu hồi phiên khi khóa tài khoản. Thêm 7 kiểm thử triển khai kiểm tra khởi tạo Admin riêng, từ chối thông tin bootstrap sai, không tự nâng quyền tài khoản cũ, giữ SQLite/mật khẩu qua restart, khởi động đồng thời và cookie/rate limit sau reverse proxy.
+
+Bản Cloudflare có thêm **16 kiểm thử** qua `npm run test:cf`, chạy bằng workerd + D1 cục bộ: đầy đủ RBAC, giá, giỏ, checkout, race condition, giao hàng, báo cáo, đánh giá, xác thực và giữ dữ liệu sau restart. Tổng cộng **37 kiểm thử** ở hai backend. Xem [hướng dẫn triển khai miễn phí](DEPLOYMENT.md).
 
 Bảo vệ có sẵn: prepared statements, schema validation bằng Zod, hash mật khẩu scrypt với salt riêng, session token ngẫu nhiên chỉ lưu hash, cookie HttpOnly/SameSite, kiểm tra Origin cho mutation, Helmet/CSP, giới hạn đăng nhập, transaction và audit log.
 

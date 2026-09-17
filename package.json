@@ -7,8 +7,18 @@
     "dev": "concurrently -k \"node --watch server/index.js\" \"vite --host 127.0.0.1\"",
     "build": "vite build",
     "start": "node server/index.js",
-    "test": "node --test tests",
-    "seed": "node server/seed.js"
+    "test": "node --test tests/business.test.js tests/deployment.test.js",
+    "seed": "node server/seed.js",
+    "build:cf": "vite build --mode cloudflare",
+    "cf:login": "wrangler login",
+    "cf:db:create": "wrangler d1 create candate-db --location=apac --binding=DB --update-config",
+    "cf:migrate": "wrangler d1 migrations apply candate-db --remote",
+    "cf:migrate:local": "wrangler d1 migrations apply candate-db --local",
+    "cf:deploy": "npm run build:cf && wrangler deploy",
+    "cf:dev": "npm run build:cf && wrangler dev",
+    "cf:secret": "node cloudflare/setup.js secret",
+    "cf:admin": "node cloudflare/setup.js admin",
+    "test:cf": "npm run build:cf && wrangler deploy --dry-run --outdir=test-results/cf-bundle && node --test cloudflare/tests/worker.test.js"
   },
   "dependencies": {
     "@fontsource/be-vietnam-pro": "^5.3.0",
@@ -17,6 +27,7 @@
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
+    "hono": "^4.13.8",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zod": "^3.24.2"
@@ -24,7 +35,9 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.1.2",
+    "miniflare": "5.20260916.0-alpha",
     "prettier": "^3.9.7",
-    "vite": "^6.1.0"
+    "vite": "^6.1.0",
+    "wrangler": "4.133.0"
   }
 }
