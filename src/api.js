@@ -5,6 +5,11 @@ export async function api(path, options = {}) {
     headers: { 'Content-Type': 'application/json', ...options.headers },
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
   });
+  if (!response.headers.get('content-type')?.includes('application/json')) {
+    const error = new Error('Không thể kết nối dịch vụ. Vui lòng thử lại sau.');
+    error.status = response.status;
+    throw error;
+  }
   const data = await response.json();
   if (!response.ok) {
     const error = new Error([data.error, ...(data.details || [])].join(' '));

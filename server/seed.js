@@ -2,6 +2,11 @@ import './env.js';
 import { openDatabase } from './db.js';
 import { hashPassword } from './auth.js';
 import { todayVN } from './pricing.js';
+if (process.env.NODE_ENV === 'production') {
+  throw new Error(
+    'Seed chứa tài khoản demo công khai và chỉ dùng cục bộ. Bản online khởi tạo Admin từ ADMIN_EMAIL/ADMIN_PASSWORD khi npm start.'
+  );
+}
 const db = openDatabase();
 if (db.prepare('SELECT count(*) AS n FROM users').get().n) {
   console.log('Database đã có dữ liệu; không ghi đè.');

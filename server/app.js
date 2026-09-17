@@ -47,6 +47,15 @@ const lotSelect = `SELECT i.*,p.name,p.brand,p.description,p.unit,p.visual,p.cat
 
 export function createApp(db) {
   const app = express();
+  // Trust only the explicitly configured number of reverse proxies.
+  // Render's edge terminates HTTPS; this also gives rate limiting the client IP.
+  const proxyHops = z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(5)
+    .parse(process.env.TRUST_PROXY_HOPS || '0');
+  if (proxyHops > 0) app.set('trust proxy', proxyHops);
   app.disable('x-powered-by');
   app.use(
     helmet({

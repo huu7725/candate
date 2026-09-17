@@ -1,0 +1,33 @@
+# Full-stack deployment: Express serves the Vite build and the SQLite API.
+# This paid compute plan is required for a persistent disk. See DEPLOYMENT.md.
+services:
+  - type: web
+    name: candate
+    runtime: node
+    plan: 0.5c-512mb
+    region: singapore
+    branch: main
+    buildCommand: npm ci --include=dev && npm test && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.23.2
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: DATABASE_PATH
+        value: /var/data/candate.sqlite
+      - key: TRUST_PROXY_HOPS
+        value: '1'
+      - key: ADMIN_NAME
+        value: Quản trị Cận
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+    disk:
+      name: candate-data
+      mountPath: /var/data
+      sizeGB: 1

@@ -2,6 +2,8 @@
 
 Bản MVP full-stack chạy được, viết bằng React + Vite, Node.js + Express, **chỉ dùng SQLite**. Giao diện tiếng Việt, không có icon, SVG, emoji hoặc thư viện icon. Minh họa bao bì được dựng bằng chữ và CSS; không phải ảnh thật của sản phẩm. Font được đóng gói cùng ứng dụng, không cần gọi Google Fonts khi chạy.
 
+**Đưa website lên mạng:** xem [hướng dẫn triển khai Render](DEPLOYMENT.md) và [render.yaml](render.yaml). GitHub Pages không chạy được Express/SQLite. Render phục vụ cả giao diện và API cùng URL HTTPS, lưu SQLite trên persistent disk và tạo Admin từ thông tin riêng bạn nhập trên Render.
+
 ## 1. Database schema trước tiên
 
 Toàn bộ câu lệnh `CREATE TABLE`, `CHECK`, khóa ngoại và index nằm trong **[server/schema.sql](server/schema.sql)**. SQLite được mở với `foreign_keys = ON`, WAL và `busy_timeout = 5000`.
@@ -64,6 +66,7 @@ API còn xác thực ngày lịch thực tế, nên `2026-02-31` bị từ chố
 ├── server/
 │   ├── schema.sql          # Toàn bộ SQLite DDL
 │   ├── db.js               # Khởi tạo database, WAL, thiết lập mặc định
+│   ├── bootstrap.js        # Tạo Admin đầu tiên bằng biến môi trường khi deploy
 │   ├── env.js              # Đọc .env bằng Node
 │   ├── auth.js             # scrypt, session cookie, middleware RBAC
 │   ├── pricing.js          # Ngày tại Việt Nam và giá theo hạn
@@ -86,6 +89,8 @@ API còn xác thực ngày lịch thực tế, nên `2026-02-31` bị từ chố
 ├── package.json
 ├── package-lock.json
 ├── vite.config.js
+├── render.yaml             # Cấu hình Render Web Service và persistent disk
+├── DEPLOYMENT.md           # Các bước deploy, chi phí, khởi tạo dữ liệu
 └── README.md
 ```
 
@@ -261,7 +266,7 @@ npm test
 npm run build
 ```
 
-14 kiểm thử tự động kiểm tra biên 0/3/7/14 ngày và ngày nhuận, múi giờ, đăng ký không tự tăng quyền, mật khẩu hash, RBAC, chặn khác origin, hàng hết hạn/hết kho, sở hữu Vendor, ghép giỏ nguyên tử, idempotency, giá snapshot, hai khách tranh một món, giỏ qua hạn, chủ đơn giao hàng, kiểm duyệt, báo cáo, giao lại/hủy và thu hồi phiên khi khóa tài khoản.
+21 kiểm thử tự động: 14 kiểm thử nghiệp vụ kiểm tra biên 0/3/7/14 ngày và ngày nhuận, múi giờ, đăng ký không tự tăng quyền, mật khẩu hash, RBAC, chặn khác origin, hàng hết hạn/hết kho, sở hữu Vendor, ghép giỏ nguyên tử, idempotency, giá snapshot, hai khách tranh một món, giỏ qua hạn, chủ đơn giao hàng, kiểm duyệt, báo cáo, giao lại/hủy và thu hồi phiên khi khóa tài khoản. Thêm 7 kiểm thử triển khai kiểm tra khởi tạo Admin riêng, từ chối thông tin bootstrap sai, không tự nâng quyền tài khoản cũ, giữ SQLite/mật khẩu qua restart, khởi động đồng thời và cookie/rate limit sau reverse proxy.
 
 Bảo vệ có sẵn: prepared statements, schema validation bằng Zod, hash mật khẩu scrypt với salt riêng, session token ngẫu nhiên chỉ lưu hash, cookie HttpOnly/SameSite, kiểm tra Origin cho mutation, Helmet/CSP, giới hạn đăng nhập, transaction và audit log.
 
